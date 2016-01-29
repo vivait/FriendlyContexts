@@ -222,7 +222,7 @@ class EntityContext extends Context
     }
 
     private function getEntityIdentiferValues($entity) {
-        $accessor = PropertyAccess::getPropertyAccessor();
+        $accessor = PropertyAccess::createPropertyAccessor();
 
         $metadata = $this->getEntityManager()->getClassMetadata(get_class($entity));
         $identifiers = $metadata->getIdentifierFieldNames();
