@@ -5,6 +5,7 @@ namespace Knp\FriendlyContexts\Context;
 use Behat\Gherkin\Node\TableNode;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 
 class EntityContext extends Context
 {
@@ -108,6 +109,7 @@ class EntityContext extends Context
         $expected = (int) $expected;
 
         $entityName = $this->resolveEntity($entity)->getName();
+
         $collection = $this
             ->getRecordBag()
             ->getCollection($entityName)
@@ -203,14 +205,31 @@ class EntityContext extends Context
 
     protected function compareArray(array $a1, array $a2)
     {
+        $a2Ids = array_map(function ($entity) {
+            return $this->getEntityIdentiferValues($entity);
+        }, $a2);
+
         $diff = [];
         foreach ($a1 as $e) {
-            if (!in_array($e, $a2)) {
+            $ids = $this->getEntityIdentiferValues($e);
+
+            if (!in_array($ids, $a2Ids)) {
                 $diff[] = $e;
             }
         }
 
         return $diff;
+    }
+
+    private function getEntityIdentiferValues($entity) {
+        $accessor = PropertyAccess::getPropertyAccessor();
+
+        $metadata = $this->getEntityManager()->getClassMetadata(get_class($entity));
+        $identifiers = $metadata->getIdentifierFieldNames();
+
+        return array_map(function ($identifier) use ($entity, $accessor) {
+            return $accessor->getValue($entity, $identifier);
+        }, $identifiers);
     }
 
     protected function getMetadata(EntityManager $entityManager)
